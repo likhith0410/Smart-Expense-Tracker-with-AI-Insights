@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Smart Expense Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .offline-container {
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .offline-icon {
+            font-size: 80px;
+            margin-bottom: 24px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .offline-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(45deg, #fff, #f0f0f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .offline-message {
+            font-size: 18px;
+            margin-bottom: 32px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .offline-features {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+            text-align: left;
+        }
+        
+        .offline-features h3 {
+            font-size: 20px;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+        
+        .offline-features ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .offline-features li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .offline-features li::before {
+            content: "✓";
+            color: #4ade80;
+            font-weight: bold;
+            margin-right: 12px;
+            font-size: 18px;
+        }
+        
+        .retry-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .retry-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .network-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .network-status.online {
+            background: rgba(34, 197, 94, 0.9);
+        }
+        
+        .tips {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .tips h4 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #f1f5f9;
+        }
+        
+        .tips p {
+            font-size: 14px;
+            opacity: 0.8;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 480px) {
+            .offline-container {
+                padding: 24px;
+            }
+            
+            .offline-icon {
+                font-size: 60px;
+            }
+            
+            .offline-title {
+                font-size: 24px;
+            }
+            
+            .offline-message {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="network-status" id="networkStatus">
+        📡 Offline
+    </div>
+    
+    <div class="offline-container">
+        <div class="offline-icon">📱💤</div>
+        <h1 class="offline-title">You're Offline</h1>
+        <p class="offline-message">
+            Don't worry! Your Smart Expense Tracker works offline too. 
+            You can still access your cached data and add new expenses.
+        </p>
+        
+        <div class="offline-features">
+            <h3>🌟 Available Offline Features:</h3>
+            <ul>
+                <li>View cached expense data</li>
+                <li>Add new expenses (will sync when online)</li>
+                <li>Browse expense categories</li>
+                <li>View your dashboard</li>
+                <li>Access cached reports</li>
+            </ul>
+        </div>
+        
+        <button class="retry-button" onclick="retryConnection()">
+            🔄 Try Again
+        </button>
+        
+        <div class="tips">
+            <h4>💡 Pro Tips:</h4>
+            <p>
+                Your expenses added offline will automatically sync when you reconnect to the internet. 
+                The app uses smart caching to ensure your data is always available.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Network status monitoring
+        function updateNetworkStatus() {
+            const statusElement = document.getElementById('networkStatus');
+            
+            if (navigator.onLine) {
+                statusElement.textContent = '🌐 Online';
+                statusElement.classList.add('online');
+                
+                // Auto-redirect when back online
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } else {
+                statusElement.textContent = '📡 Offline';
+                statusElement.classList.remove('online');
+            }
+        }
+        
+        // Check network status on load
+        updateNetworkStatus();
+        
+        // Listen for network changes
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+        
+        // Retry connection function
+        function retryConnection() {
+            const button = document.querySelector('.retry-button');
+            
+            // Show loading state
+            button.textContent = '🔄 Checking...';
+            button.style.opacity = '0.7';
+            button.disabled = true;
+            
+            // Check if we're back online
+            setTimeout(() => {
+                if (navigator.onLine) {
+                    button.textContent = '✅ Connected!';
+                    button.style.background = 'rgba(34, 197, 94, 0.3)';
+                    
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    button.textContent = '❌ Still Offline';
+                    button.style.background = 'rgba(239, 68, 68, 0.3)';
+                    
+                    setTimeout(() => {
+                        button.textContent = '🔄 Try Again';
+                        button.style.background = 'rgba(255, 255, 255, 0.2)';
+                        button.style.opacity = '1';
+                        button.disabled = false;
+                    }, 2000);
+                }
+            }, 1000);
+        }
+        
+        // Add keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                retryConnection();
+            }
+        });
+        
+        // Service Worker messaging
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'NETWORK_CHANGED') {
+                    updateNetworkStatus();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
