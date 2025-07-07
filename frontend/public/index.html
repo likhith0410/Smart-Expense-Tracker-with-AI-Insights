@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#3b82f6" />
+    
+    <!-- Enhanced PWA Meta Tags -->
+    <meta name="description" content="Smart Expense Tracker with AI - Track expenses, scan receipts, and get intelligent financial insights" />
+    <meta name="keywords" content="expense tracker, AI, finance, budget, receipt scanner, money management" />
+    <meta name="author" content="Smart Finance Tracker" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="ExpenseAI" />
+    <meta name="application-name" content="ExpenseAI" />
+    <meta name="msapplication-TileColor" content="#3b82f6" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    
+    <!-- Open Graph Meta Tags for Social Sharing -->
+    <meta property="og:title" content="Smart Expense Tracker with AI" />
+    <meta property="og:description" content="AI-powered expense tracking with smart categorization and financial insights" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="%PUBLIC_URL%" />
+    <meta property="og:image" content="%PUBLIC_URL%/logo512.png" />
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Smart Expense Tracker with AI" />
+    <meta name="twitter:description" content="AI-powered expense tracking with smart categorization and financial insights" />
+    <meta name="twitter:image" content="%PUBLIC_URL%/logo512.png" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="%PUBLIC_URL%/logo192.png" />
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileImage" content="%PUBLIC_URL%/logo192.png" />
+    <meta name="msapplication-config" content="%PUBLIC_URL%/browserconfig.xml" />
+    
+    <!-- Splash Screen for iOS -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preconnect" href="http://localhost:8000" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <title>Smart Expense Tracker with AI</title>
+    
+    <!-- Inline Critical CSS for PWA Loading -->
+    <style>
+      /* PWA Loading Styles */
+      .pwa-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out;
+      }
+      
+      .pwa-loader.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      
+      .pwa-logo {
+        width: 120px;
+        height: 120px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        margin-bottom: 24px;
+        backdrop-filter: blur(10px);
+        animation: pulse 2s infinite;
+      }
+      
+      .pwa-title {
+        color: white;
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      
+      .pwa-subtitle {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+      
+      /* Hide loader when app is ready */
+      .app-ready .pwa-loader {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>
+      <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+        <h2>JavaScript Required</h2>
+        <p>You need to enable JavaScript to run the Smart Expense Tracker.</p>
+        <p>Please enable JavaScript in your browser settings and reload the page.</p>
+      </div>
+    </noscript>
+    
+    <!-- PWA Loading Screen -->
+    <div id="pwa-loader" class="pwa-loader">
+      <div class="pwa-logo">💰</div>
+      <div class="pwa-title">ExpenseAI</div>
+      <div class="pwa-subtitle">Loading your smart finance tracker...</div>
+    </div>
+    
+    <div id="root"></div>
+    
+    <!-- PWA Install Prompt -->
+    <script>
+      // PWA Installation Prompt
+      let deferredPrompt;
+      let installButton;
+      
+      window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('PWA install prompt triggered');
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Show custom install button
+        showInstallPrompt();
+      });
+      
+      function showInstallPrompt() {
+        // Create install prompt
+        const installPrompt = document.createElement('div');
+        installPrompt.innerHTML = `
+          <div style="
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #3b82f6;
+            color: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            z-index: 10000;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+          " id="install-prompt" onclick="installPWA()">
+            <span style="font-size: 20px;">📱</span>
+            <div>
+              <div style="font-weight: 600; margin-bottom: 4px;">Install ExpenseAI</div>
+              <div style="opacity: 0.9; font-size: 12px;">Add to home screen for quick access</div>
+            </div>
+            <span style="font-size: 16px; margin-left: auto;">×</span>
+          </div>
+        `;
+        
+        document.body.appendChild(installPrompt);
+        
+        // Add hover effect
+        const prompt = document.getElementById('install-prompt');
+        prompt.addEventListener('mouseenter', () => {
+          prompt.style.transform = 'translateY(-2px)';
+        });
+        prompt.addEventListener('mouseleave', () => {
+          prompt.style.transform = 'translateY(0)';
+        });
+        
+        // Auto-hide after 10 seconds
+        setTimeout(() => {
+          if (prompt && prompt.parentNode) {
+            prompt.style.opacity = '0';
+            setTimeout(() => {
+              if (prompt.parentNode) {
+                prompt.parentNode.removeChild(prompt);
+              }
+            }, 300);
+          }
+        }, 10000);
+      }
+      
+      window.installPWA = async function() {
+        const prompt = document.getElementById('install-prompt');
+        if (prompt) prompt.style.display = 'none';
+        
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          console.log(`PWA install outcome: ${outcome}`);
+          deferredPrompt = null;
+        }
+      };
+      
+      // Handle successful installation
+      window.addEventListener('appinstalled', (evt) => {
+        console.log('PWA was installed successfully');
+        // You can track this event for analytics
+      });
+      
+      // Hide loading screen when app is ready
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          const loader = document.getElementById('pwa-loader');
+          if (loader) {
+            loader.classList.add('hidden');
+            setTimeout(() => {
+              loader.style.display = 'none';
+            }, 500);
+          }
+        }, 1000);
+      });
+      
+      // Service Worker Registration
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>

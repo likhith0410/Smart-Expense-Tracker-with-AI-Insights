@@ -1,0 +1,52 @@
+# Ignore virtual environment
+venv/
+.venv
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# VS Code settings (optional, if you use VS Code)
+.vscode/
+
+# Environment variables
+.env
+*.env
+
+# macOS system files
+.DS_Store
+
+# Logs
+*.log
+
+# Python cache
+*.egg-info/
+*.egg
+.eggs/
+
+# Jupyter Notebook checkpoints (if any)
+.ipynb_checkpoints/
+
+# pycache inside any directory
+**/__pycache__/
+
+# SQLite or other DB files
+*.sqlite3
+*.db
+
+# Coverage reports
+htmlcov/
+coverage.xml
+*.cover
+*.py,cover
+
+# Build / Distribution
+build/
+dist/
+*.egg-info/
+
+# Test result cache
+.cache/
+
+# Node (if any frontend)
+node_modules/
