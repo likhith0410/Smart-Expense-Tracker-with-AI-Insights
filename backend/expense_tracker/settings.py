@@ -127,7 +127,7 @@ REST_FRAMEWORK = {
 
 # CORS settings for React frontend - ENHANCED
 CORS_ALLOWED_ORIGINS = [
-    "https://your-app.vercel.app",  # Add your Vercel URL here
+    "https://smart-expense-tracker-with-ai-insig-six.vercel.app",
     "http://localhost:3000",
 ]
 
