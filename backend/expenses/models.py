@@ -1,9 +1,29 @@
-# backend/expenses/models.py
+# backend/expenses/models.py - SIMPLIFIED WITH HARDCODED CATEGORIES
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
 class Category(models.Model):
+    """Keep this for backwards compatibility, but categories are now hardcoded in frontend"""
+    CATEGORY_CHOICES = [
+        ('food_dining', 'Food & Dining'),
+        ('transportation', 'Transportation'),
+        ('shopping', 'Shopping'),
+        ('entertainment', 'Entertainment'),
+        ('healthcare', 'Healthcare'),
+        ('utilities', 'Utilities'),
+        ('education', 'Education'),
+        ('groceries', 'Groceries'),
+        ('fitness', 'Fitness'),
+        ('travel', 'Travel'),
+        ('bills_subscriptions', 'Bills & Subscriptions'),
+        ('clothing', 'Clothing'),
+        ('electronics', 'Electronics'),
+        ('home_garden', 'Home & Garden'),
+        ('gifts_donations', 'Gifts & Donations'),
+        ('other', 'Other'),
+    ]
+    
     name = models.CharField(max_length=100, unique=True)
     icon = models.CharField(max_length=50, default='💰')
     color = models.CharField(max_length=7, default='#3B82F6')
@@ -11,7 +31,7 @@ class Category(models.Model):
     
     class Meta:
         verbose_name_plural = "Categories"
-        ordering = ['name']  # Fix pagination warning
+        ordering = ['name']
     
     def __str__(self):
         return self.name
@@ -25,13 +45,34 @@ class Expense(models.Model):
         ('other', 'Other'),
     ]
     
+    # Updated category choices - now uses string values instead of foreign key
+    CATEGORY_CHOICES = [
+        ('food_dining', 'Food & Dining'),
+        ('transportation', 'Transportation'),
+        ('shopping', 'Shopping'),
+        ('entertainment', 'Entertainment'),
+        ('healthcare', 'Healthcare'),
+        ('utilities', 'Utilities'),
+        ('education', 'Education'),
+        ('groceries', 'Groceries'),
+        ('fitness', 'Fitness'),
+        ('travel', 'Travel'),
+        ('bills_subscriptions', 'Bills & Subscriptions'),
+        ('clothing', 'Clothing'),
+        ('electronics', 'Electronics'),
+        ('home_garden', 'Home & Garden'),
+        ('gifts_donations', 'Gifts & Donations'),
+        ('other', 'Other'),
+    ]
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='expenses')
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='expenses')
+    # Changed from ForeignKey to CharField for categories
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='cash')
-    date = models.DateField()  # Changed from DateTimeField to DateField
+    date = models.DateField()
     receipt_image = models.ImageField(upload_to='receipts/', blank=True, null=True)
     is_recurring = models.BooleanField(default=False)
     is_ai_categorized = models.BooleanField(default=False)
@@ -43,10 +84,45 @@ class Expense(models.Model):
     
     def __str__(self):
         return f"{self.title} - ₹{self.amount}"
+    
+    # Helper methods to get category display info
+    def get_category_display_info(self):
+        category_info = {
+            'food_dining': {'name': 'Food & Dining', 'icon': '🍽️', 'color': '#FF6B6B'},
+            'transportation': {'name': 'Transportation', 'icon': '🚗', 'color': '#4ECDC4'},
+            'shopping': {'name': 'Shopping', 'icon': '🛍️', 'color': '#45B7D1'},
+            'entertainment': {'name': 'Entertainment', 'icon': '🎬', 'color': '#96CEB4'},
+            'healthcare': {'name': 'Healthcare', 'icon': '🏥', 'color': '#FFEAA7'},
+            'utilities': {'name': 'Utilities', 'icon': '⚡', 'color': '#DDA0DD'},
+            'education': {'name': 'Education', 'icon': '📚', 'color': '#98D8C8'},
+            'groceries': {'name': 'Groceries', 'icon': '🛒', 'color': '#F7DC6F'},
+            'fitness': {'name': 'Fitness', 'icon': '💪', 'color': '#BB8FCE'},
+            'travel': {'name': 'Travel', 'icon': '✈️', 'color': '#85C1E9'},
+            'bills_subscriptions': {'name': 'Bills & Subscriptions', 'icon': '📄', 'color': '#F8C471'},
+            'clothing': {'name': 'Clothing', 'icon': '👕', 'color': '#82E0AA'},
+            'electronics': {'name': 'Electronics', 'icon': '📱', 'color': '#AED6F1'},
+            'home_garden': {'name': 'Home & Garden', 'icon': '🏠', 'color': '#A9DFBF'},
+            'gifts_donations': {'name': 'Gifts & Donations', 'icon': '🎁', 'color': '#F1948A'},
+            'other': {'name': 'Other', 'icon': '💰', 'color': '#D5DBDB'},
+        }
+        return category_info.get(self.category, category_info['other'])
+    
+    @property
+    def category_name(self):
+        return self.get_category_display_info()['name']
+    
+    @property
+    def category_icon(self):
+        return self.get_category_display_info()['icon']
+    
+    @property
+    def category_color(self):
+        return self.get_category_display_info()['color']
 
 class Budget(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='budgets')
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='budgets')
+    # Changed from ForeignKey to CharField for categories
+    category = models.CharField(max_length=50, choices=Expense.CATEGORY_CHOICES, default='other')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     period = models.CharField(max_length=20, choices=[
         ('weekly', 'Weekly'),
@@ -63,12 +139,13 @@ class Budget(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"{self.user.username} - {self.category.name} - ₹{self.amount}/{self.period}"
+        return f"{self.user.username} - {self.get_category_display()} - ₹{self.amount}/{self.period}"
     
     @property
     def spent_amount(self):
-        return self.category.expenses.filter(
+        return Expense.objects.filter(
             user=self.user,
+            category=self.category,
             date__range=[self.start_date, self.end_date]
         ).aggregate(
             total=models.Sum('amount')
@@ -83,3 +160,28 @@ class Budget(models.Model):
         if self.amount == 0:
             return 0
         return min((self.spent_amount / self.amount) * 100, 100)
+    
+    def get_category_display_info(self):
+        category_info = {
+            'food_dining': {'name': 'Food & Dining', 'icon': '🍽️', 'color': '#FF6B6B'},
+            'transportation': {'name': 'Transportation', 'icon': '🚗', 'color': '#4ECDC4'},
+            'shopping': {'name': 'Shopping', 'icon': '🛍️', 'color': '#45B7D1'},
+            'entertainment': {'name': 'Entertainment', 'icon': '🎬', 'color': '#96CEB4'},
+            'healthcare': {'name': 'Healthcare', 'icon': '🏥', 'color': '#FFEAA7'},
+            'utilities': {'name': 'Utilities', 'icon': '⚡', 'color': '#DDA0DD'},
+            'education': {'name': 'Education', 'icon': '📚', 'color': '#98D8C8'},
+            'groceries': {'name': 'Groceries', 'icon': '🛒', 'color': '#F7DC6F'},
+            'fitness': {'name': 'Fitness', 'icon': '💪', 'color': '#BB8FCE'},
+            'travel': {'name': 'Travel', 'icon': '✈️', 'color': '#85C1E9'},
+            'bills_subscriptions': {'name': 'Bills & Subscriptions', 'icon': '📄', 'color': '#F8C471'},
+            'clothing': {'name': 'Clothing', 'icon': '👕', 'color': '#82E0AA'},
+            'electronics': {'name': 'Electronics', 'icon': '📱', 'color': '#AED6F1'},
+            'home_garden': {'name': 'Home & Garden', 'icon': '🏠', 'color': '#A9DFBF'},
+            'gifts_donations': {'name': 'Gifts & Donations', 'icon': '🎁', 'color': '#F1948A'},
+            'other': {'name': 'Other', 'icon': '💰', 'color': '#D5DBDB'},
+        }
+        return category_info.get(self.category, category_info['other'])
+    
+    @property
+    def category_name(self):
+        return self.get_category_display_info()['name']

@@ -1,146 +1,268 @@
-// frontend/src/services/api.js - COMPLETE FIXED VERSION
+// frontend/src/services/api.js - SIMPLIFIED FOR HARDCODED CATEGORIES
 import axios from 'axios';
 
-//const API_BASE_URL = 'http://localhost:8000/api';
-//const API_BASE_URL = "https://smart-expense-backend-25rb.onrender.com/api";
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000/api';
+// Production API URL configuration
+const getApiBaseUrl = () => {
+  if (window.location.hostname.includes('vercel.app')) {
+    return 'https://expense-tracker-backend2-1bv3.onrender.com/api';
+  }
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  return 'http://127.0.0.1:8000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+console.log('🌐 API Base URL:', API_BASE_URL);
 
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
 });
 
-// Add token to requests
+// Request interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Token ${token}`;
     }
+    console.log(`🔄 API Request: ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
   (error) => {
+    console.error('❌ Request Error:', error);
     return Promise.reject(error);
   }
 );
 
-// Handle response errors
+// Response interceptor
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`);
+    return response;
+  },
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+    const { response, config } = error;
+    
+    if (response) {
+      console.error(`❌ API Error: ${config?.method?.toUpperCase()} ${config?.url} - ${response.status}:`, response.data);
+      
+      if (response.status === 401) {
+        console.log('🔐 Unauthorized - clearing token');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
+    } else {
+      console.error('❌ Network Error:', error.message);
     }
+    
     return Promise.reject(error);
   }
 );
 
-// Expense Service
+// Simplified expense service - NO CATEGORY API CALLS
 export const expenseService = {
   // Get all expenses
-  getExpenses: (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    return api.get(`/expenses/expenses/?${queryString}`).then(res => res.data);
+  getExpenses: async (params = {}) => {
+    try {
+      console.log('💰 Fetching expenses with params:', params);
+      const queryString = new URLSearchParams(params).toString();
+      const response = await api.get(`/expenses/expenses/?${queryString}`);
+      console.log(`✅ Expenses fetched: ${(response.data.results || response.data).length} items`);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching expenses:', error);
+      throw error;
+    }
   },
 
   // Get expense by ID
-  getExpense: (id) => {
-    return api.get(`/expenses/expenses/${id}/`).then(res => res.data);
+  getExpense: async (id) => {
+    try {
+      const response = await api.get(`/expenses/expenses/${id}/`);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching expense:', error);
+      throw error;
+    }
   },
 
   // Create new expense
-  createExpense: (data) => {
-    return api.post('/expenses/expenses/', data).then(res => res.data);
+  createExpense: async (data) => {
+    try {
+      console.log('💰 Creating expense:', data instanceof FormData ? 'FormData' : data);
+      const response = await api.post('/expenses/expenses/', data);
+      console.log('✅ Expense created successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error creating expense:', error);
+      throw error;
+    }
   },
 
   // Update expense
-  updateExpense: (id, data) => {
-    return api.put(`/expenses/expenses/${id}/`, data).then(res => res.data);
+  updateExpense: async (id, data) => {
+    try {
+      console.log(`💰 Updating expense ${id}`);
+      const response = await api.put(`/expenses/expenses/${id}/`, data);
+      console.log('✅ Expense updated successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error updating expense:', error);
+      throw error;
+    }
   },
 
   // Delete expense
-  deleteExpense: (id) => {
-    return api.delete(`/expenses/expenses/${id}/`);
+  deleteExpense: async (id) => {
+    try {
+      console.log(`🗑️ Deleting expense ${id}`);
+      await api.delete(`/expenses/expenses/${id}/`);
+      console.log('✅ Expense deleted successfully');
+    } catch (error) {
+      console.error('❌ Error deleting expense:', error);
+      throw error;
+    }
   },
 
   // Get expense statistics
-  getStats: () => {
-    return api.get('/expenses/expenses/stats/').then(res => res.data);
+  getStats: async () => {
+    try {
+      console.log('📊 Fetching expense stats...');
+      const response = await api.get('/expenses/expenses/stats/');
+      console.log('✅ Stats fetched successfully');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching stats:', error);
+      return {
+        total_expenses: 0,
+        total_transactions: 0,
+        avg_transaction: 0,
+        top_category: 'None',
+        monthly_trend: [],
+        category_breakdown: []
+      };
+    }
   },
 
   // Get recent expenses
-  getRecentExpenses: () => {
-    return api.get('/expenses/expenses/recent/').then(res => res.data);
+  getRecentExpenses: async () => {
+    try {
+      const response = await api.get('/expenses/expenses/recent/');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching recent expenses:', error);
+      return [];
+    }
   },
 
-  // Get categories
-  getCategories: () => {
-    return api.get('/expenses/categories/').then(res => res.data);
+  // REMOVED: All category API methods - categories are now hardcoded
+  // getCategories, createCategory, updateCategory, deleteCategory
+
+  // Budget Management
+  getBudgets: async () => {
+    try {
+      const response = await api.get('/expenses/budgets/');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching budgets:', error);
+      return { results: [] };
+    }
   },
 
-  // Create category
-  createCategory: (data) => {
-    return api.post('/expenses/categories/', data).then(res => res.data);
+  createBudget: async (data) => {
+    try {
+      const response = await api.post('/expenses/budgets/', data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error creating budget:', error);
+      throw error;
+    }
   },
 
-  // Update category
-  updateCategory: (id, data) => {
-    return api.put(`/expenses/categories/${id}/`, data).then(res => res.data);
+  updateBudget: async (id, data) => {
+    try {
+      const response = await api.put(`/expenses/budgets/${id}/`, data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error updating budget:', error);
+      throw error;
+    }
   },
 
-  // Delete category
-  deleteCategory: (id) => {
-    return api.delete(`/expenses/categories/${id}/`);
+  deleteBudget: async (id) => {
+    try {
+      await api.delete(`/expenses/budgets/${id}/`);
+    } catch (error) {
+      console.error('❌ Error deleting budget:', error);
+      throw error;
+    }
   },
 
-  // Budget Management - CONSOLIDATED (NO DUPLICATES)
-  getBudgets: () => {
-    return api.get('/expenses/budgets/').then(res => res.data);
-  },
-
-  createBudget: (data) => {
-    return api.post('/expenses/budgets/', data).then(res => res.data);
-  },
-
-  updateBudget: (id, data) => {
-    return api.put(`/expenses/budgets/${id}/`, data).then(res => res.data);
-  },
-
-  deleteBudget: (id) => {
-    return api.delete(`/expenses/budgets/${id}/`);
-  },
-
-  getBudgetAlerts: () => {
-    return api.get('/expenses/budgets/alerts/').then(res => res.data);
-  },
-
-  getBudgetAnalytics: () => {
-    return api.get('/expenses/budgets/analytics/').then(res => res.data);
+  getBudgetAlerts: async () => {
+    try {
+      const response = await api.get('/expenses/budgets/alerts/');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching budget alerts:', error);
+      return [];
+    }
   },
 
   // AI Services
-  getAIInsights: () => {
-    return api.get('/ai/insights/').then(res => res.data);
+  getAIInsights: async () => {
+    try {
+      const response = await api.get('/ai/insights/');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching AI insights:', error);
+      return { insights: [] };
+    }
   },
 
-  getBudgetRecommendations: () => {
-    return api.get('/ai/recommendations/').then(res => res.data);
+  getBudgetRecommendations: async () => {
+    try {
+      const response = await api.get('/ai/recommendations/');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error fetching budget recommendations:', error);
+      return { recommendations: [] };
+    }
   },
 
-  categorizeExpense: (data) => {
-    return api.post('/ai/categorize/', data).then(res => res.data);
+  categorizeExpense: async (data) => {
+    try {
+      const response = await api.post('/ai/categorize/', data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error categorizing expense:', error);
+      return {
+        suggested_category: {
+          name: 'other'
+        }
+      };
+    }
   },
 
-  scanReceipt: (formData) => {
-    return api.post('/ai/scan-receipt/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }).then(res => res.data);
+  scanReceipt: async (formData) => {
+    try {
+      const response = await api.post('/ai/scan-receipt/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error scanning receipt:', error);
+      throw error;
+    }
   },
 };
 

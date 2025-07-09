@@ -1,4 +1,4 @@
-# backend/expenses/views.py - Updated with better error handling
+# backend/expenses/views.py - SIMPLIFIED FOR HARDCODED CATEGORIES
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -14,15 +14,38 @@ from .serializers import (
     CategorySerializer, ExpenseSerializer, BudgetSerializer, ExpenseStatsSerializer
 )
 
-# Set up logging
 logger = logging.getLogger(__name__)
 
 class CategoryViewSet(viewsets.ModelViewSet):
+    """Keep for backwards compatibility but categories are now hardcoded in frontend"""
     serializer_class = CategorySerializer
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
         return Category.objects.all()
+    
+    @action(detail=False, methods=['get'])
+    def hardcoded_list(self, request):
+        """Return hardcoded categories that match frontend"""
+        categories = [
+            {'id': 1, 'name': 'Food & Dining', 'icon': '🍽️', 'color': '#FF6B6B', 'value': 'food_dining'},
+            {'id': 2, 'name': 'Transportation', 'icon': '🚗', 'color': '#4ECDC4', 'value': 'transportation'},
+            {'id': 3, 'name': 'Shopping', 'icon': '🛍️', 'color': '#45B7D1', 'value': 'shopping'},
+            {'id': 4, 'name': 'Entertainment', 'icon': '🎬', 'color': '#96CEB4', 'value': 'entertainment'},
+            {'id': 5, 'name': 'Healthcare', 'icon': '🏥', 'color': '#FFEAA7', 'value': 'healthcare'},
+            {'id': 6, 'name': 'Utilities', 'icon': '⚡', 'color': '#DDA0DD', 'value': 'utilities'},
+            {'id': 7, 'name': 'Education', 'icon': '📚', 'color': '#98D8C8', 'value': 'education'},
+            {'id': 8, 'name': 'Groceries', 'icon': '🛒', 'color': '#F7DC6F', 'value': 'groceries'},
+            {'id': 9, 'name': 'Fitness', 'icon': '💪', 'color': '#BB8FCE', 'value': 'fitness'},
+            {'id': 10, 'name': 'Travel', 'icon': '✈️', 'color': '#85C1E9', 'value': 'travel'},
+            {'id': 11, 'name': 'Bills & Subscriptions', 'icon': '📄', 'color': '#F8C471', 'value': 'bills_subscriptions'},
+            {'id': 12, 'name': 'Clothing', 'icon': '👕', 'color': '#82E0AA', 'value': 'clothing'},
+            {'id': 13, 'name': 'Electronics', 'icon': '📱', 'color': '#AED6F1', 'value': 'electronics'},
+            {'id': 14, 'name': 'Home & Garden', 'icon': '🏠', 'color': '#A9DFBF', 'value': 'home_garden'},
+            {'id': 15, 'name': 'Gifts & Donations', 'icon': '🎁', 'color': '#F1948A', 'value': 'gifts_donations'},
+            {'id': 16, 'name': 'Other', 'icon': '💰', 'color': '#D5DBDB', 'value': 'other'},
+        ]
+        return Response(categories)
 
 class ExpenseViewSet(viewsets.ModelViewSet):
     serializer_class = ExpenseSerializer
@@ -40,7 +63,7 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         # Filter by category
         category = self.request.query_params.get('category')
         if category:
-            queryset = queryset.filter(category_id=category)
+            queryset = queryset.filter(category=category)
         
         # Search functionality
         search = self.request.query_params.get('search')
@@ -127,10 +150,16 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         avg_transaction = user_expenses.aggregate(avg=Avg('amount'))['avg'] or 0
         
         # Top category
-        top_category = user_expenses.values('category__name').annotate(
+        top_category_data = user_expenses.values('category').annotate(
             total=Sum('amount')
         ).order_by('-total').first()
-        top_category_name = top_category['category__name'] if top_category else 'None'
+        
+        if top_category_data:
+            # Get the display name for the category
+            expense_obj = Expense(category=top_category_data['category'])
+            top_category_name = expense_obj.category_name
+        else:
+            top_category_name = 'None'
         
         # Monthly trend (last 6 months)
         monthly_trend = []
@@ -147,10 +176,20 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             })
         
         # Category breakdown
-        category_breakdown = list(user_expenses.values('category__name', 'category__color').annotate(
+        category_breakdown = []
+        category_data = user_expenses.values('category').annotate(
             total=Sum('amount'),
             count=Count('id')
-        ).order_by('-total')[:5])
+        ).order_by('-total')[:5]
+        
+        for item in category_data:
+            expense_obj = Expense(category=item['category'])
+            category_breakdown.append({
+                'category__name': expense_obj.category_name,
+                'category__color': expense_obj.category_color,
+                'total': float(item['total']),
+                'count': item['count']
+            })
         
         stats_data = {
             'total_expenses': total_expenses,
@@ -189,8 +228,8 @@ class BudgetViewSet(viewsets.ModelViewSet):
                 alert_type = 'danger' if budget.progress_percentage >= 100 else 'warning'
                 alerts.append({
                     'id': budget.id,
-                    'category': budget.category.name,
-                    'message': f"You've spent {budget.progress_percentage:.1f}% of your {budget.category.name} budget",
+                    'category': budget.category_name,
+                    'message': f"You've spent {budget.progress_percentage:.1f}% of your {budget.category_name} budget",
                     'type': alert_type,
                     'spent': budget.spent_amount,
                     'budget': budget.amount

@@ -1,8 +1,9 @@
-# backend/expenses/serializers.py - Updated ExpenseSerializer
+# backend/expenses/serializers.py - SIMPLIFIED FOR HARDCODED CATEGORIES
 from rest_framework import serializers
 from .models import Category, Expense, Budget
 
 class CategorySerializer(serializers.ModelSerializer):
+    """Keep for backwards compatibility but not used with hardcoded categories"""
     expense_count = serializers.SerializerMethodField()
     total_amount = serializers.SerializerMethodField()
     
@@ -26,10 +27,11 @@ class CategorySerializer(serializers.ModelSerializer):
         return 0
 
 class ExpenseSerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source='category.name', read_only=True)
-    category_icon = serializers.CharField(source='category.icon', read_only=True)
-    category_color = serializers.CharField(source='category.color', read_only=True)
-    receipt_image = serializers.ImageField(required=False, allow_null=True)  # ✅ Fixed: Make optional
+    # Use SerializerMethodField to get category display info
+    category_name = serializers.SerializerMethodField()
+    category_icon = serializers.SerializerMethodField()
+    category_color = serializers.SerializerMethodField()
+    receipt_image = serializers.ImageField(required=False, allow_null=True)
     
     class Meta:
         model = Expense
@@ -41,6 +43,15 @@ class ExpenseSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['user', 'is_ai_categorized', 'created_at', 'updated_at']
     
+    def get_category_name(self, obj):
+        return obj.category_name
+    
+    def get_category_icon(self, obj):
+        return obj.category_icon
+    
+    def get_category_color(self, obj):
+        return obj.category_color
+    
     def validate_amount(self, value):
         """Validate that amount is positive"""
         if value <= 0:
@@ -48,9 +59,10 @@ class ExpenseSerializer(serializers.ModelSerializer):
         return value
     
     def validate_category(self, value):
-        """Validate that category exists"""
-        if not value:
-            raise serializers.ValidationError("Category is required")
+        """Validate that category is in allowed choices"""
+        valid_categories = [choice[0] for choice in Expense.CATEGORY_CHOICES]
+        if value not in valid_categories:
+            raise serializers.ValidationError("Invalid category selected")
         return value
     
     def create(self, validated_data):
@@ -69,7 +81,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 class BudgetSerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source='category.name', read_only=True)
+    category_name = serializers.SerializerMethodField()
     spent_amount = serializers.ReadOnlyField()
     remaining_amount = serializers.ReadOnlyField()
     progress_percentage = serializers.ReadOnlyField()
@@ -82,6 +94,16 @@ class BudgetSerializer(serializers.ModelSerializer):
             'remaining_amount', 'progress_percentage', 'created_at'
         ]
         read_only_fields = ['user', 'created_at']
+    
+    def get_category_name(self, obj):
+        return obj.category_name
+    
+    def validate_category(self, value):
+        """Validate that category is in allowed choices"""
+        valid_categories = [choice[0] for choice in Expense.CATEGORY_CHOICES]
+        if value not in valid_categories:
+            raise serializers.ValidationError("Invalid category selected")
+        return value
     
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user

@@ -1,4 +1,4 @@
-// frontend/src/components/BudgetManagement.jsx
+// frontend/src/components/BudgetManagement.jsx - HARDCODED CATEGORIES VERSION
 import React, { useState, useEffect } from 'react';
 import { 
   Target, 
@@ -20,7 +20,6 @@ import '../styles/BudgetManagement.css';
 
 const BudgetManagement = ({ user, isOpen, onClose }) => {
   const [budgets, setBudgets] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -33,6 +32,26 @@ const BudgetManagement = ({ user, isOpen, onClose }) => {
     end_date: getDefaultEndDate('monthly')
   });
 
+  // Hardcoded categories - same as ExpenseForm
+  const categories = [
+    { value: 'food_dining', name: 'Food & Dining', icon: '🍽️', color: '#FF6B6B' },
+    { value: 'transportation', name: 'Transportation', icon: '🚗', color: '#4ECDC4' },
+    { value: 'shopping', name: 'Shopping', icon: '🛍️', color: '#45B7D1' },
+    { value: 'entertainment', name: 'Entertainment', icon: '🎬', color: '#96CEB4' },
+    { value: 'healthcare', name: 'Healthcare', icon: '🏥', color: '#FFEAA7' },
+    { value: 'utilities', name: 'Utilities', icon: '⚡', color: '#DDA0DD' },
+    { value: 'education', name: 'Education', icon: '📚', color: '#98D8C8' },
+    { value: 'groceries', name: 'Groceries', icon: '🛒', color: '#F7DC6F' },
+    { value: 'fitness', name: 'Fitness', icon: '💪', color: '#BB8FCE' },
+    { value: 'travel', name: 'Travel', icon: '✈️', color: '#85C1E9' },
+    { value: 'bills_subscriptions', name: 'Bills & Subscriptions', icon: '📄', color: '#F8C471' },
+    { value: 'clothing', name: 'Clothing', icon: '👕', color: '#82E0AA' },
+    { value: 'electronics', name: 'Electronics', icon: '📱', color: '#AED6F1' },
+    { value: 'home_garden', name: 'Home & Garden', icon: '🏠', color: '#A9DFBF' },
+    { value: 'gifts_donations', name: 'Gifts & Donations', icon: '🎁', color: '#F1948A' },
+    { value: 'other', name: 'Other', icon: '💰', color: '#D5DBDB' },
+  ];
+
   useEffect(() => {
     if (isOpen) {
       fetchData();
@@ -41,14 +60,12 @@ const BudgetManagement = ({ user, isOpen, onClose }) => {
 
   const fetchData = async () => {
     try {
-      const [budgetsData, categoriesData, expensesData] = await Promise.all([
+      const [budgetsData, expensesData] = await Promise.all([
         expenseService.getBudgets(),
-        expenseService.getCategories(),
         expenseService.getExpenses({ limit: 1000 })
       ]);
 
       setBudgets(budgetsData.results || budgetsData);
-      setCategories(categoriesData.results || categoriesData);
       setExpenses(expensesData.results || expensesData);
     } catch (error) {
       console.error('Error fetching budget data:', error);
@@ -129,6 +146,10 @@ const BudgetManagement = ({ user, isOpen, onClose }) => {
     }
   };
 
+  const getCategoryInfo = (categoryValue) => {
+    return categories.find(cat => cat.value === categoryValue) || categories.find(cat => cat.value === 'other');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -152,7 +173,7 @@ const BudgetManagement = ({ user, isOpen, onClose }) => {
   const handleEdit = (budget) => {
     setEditingBudget(budget);
     setFormData({
-      category: budget.category.toString(),
+      category: budget.category,
       amount: budget.amount.toString(),
       period: budget.period,
       start_date: budget.start_date,
@@ -290,17 +311,17 @@ const BudgetManagement = ({ user, isOpen, onClose }) => {
           ) : (
             budgets.map((budget) => {
               const progress = calculateBudgetProgress(budget);
-              const categoryInfo = categories.find(c => c.id === budget.category);
+              const categoryInfo = getCategoryInfo(budget.category);
               
               return (
                 <div key={budget.id} className={`budget-card ${progress.status}`}>
                   <div className="budget-header">
                     <div className="budget-category">
-                      <span className="category-icon" style={{ color: categoryInfo?.color }}>
-                        {categoryInfo?.icon || '💰'}
+                      <span className="category-icon" style={{ color: categoryInfo.color }}>
+                        {categoryInfo.icon}
                       </span>
                       <div className="budget-info">
-                        <h4>{categoryInfo?.name || 'Unknown Category'}</h4>
+                        <h4>{categoryInfo.name}</h4>
                         <span className="budget-period">{budget.period} budget</span>
                       </div>
                     </div>
@@ -393,7 +414,7 @@ const BudgetManagement = ({ user, isOpen, onClose }) => {
                     >
                       <option value="">Select category</option>
                       {categories.map(cat => (
-                        <option key={cat.id} value={cat.id}>
+                        <option key={cat.value} value={cat.value}>
                           {cat.icon} {cat.name}
                         </option>
                       ))}

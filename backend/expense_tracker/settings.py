@@ -1,17 +1,24 @@
-# backend/expense_tracker/settings.py
+# backend/expense_tracker/settings.py - PRODUCTION READY VERSION (MERGE CONFLICT RESOLVED)
 import os
 import dj_database_url
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
+# 🔐 PRODUCTION SECURITY SETTINGS
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'your-secret-key-change-in-production')
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+# 🌐 PRODUCTION HOSTS
+ALLOWED_HOSTS = [
+    'localhost', 
+    '127.0.0.1', 
+    '0.0.0.0',
+    '.onrender.com',  # ✅ Added for Render
+    'expense-tracker-backend2-1bv3.onrender.com',  # ✅ Your specific domain
+]
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.onrender.com']
-
-# Application definition - Apps at root level
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -25,15 +32,16 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     
-    # Local apps - Simple names
+    # Local apps
     'authentication',
     'expenses',
     'ai_insights',
 ]
 
+# 📦 PRODUCTION MIDDLEWARE (ADDED WHITENOISE)
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # ✅ Added for static files
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -45,11 +53,10 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'expense_tracker.urls'
 
-# Simplified TEMPLATES - no React build dependency
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],  # Remove React build directory dependency
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -64,16 +71,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'expense_tracker.wsgi.application'
 
-# Database
-if 'DATABASE_URL' in os.environ:
+# 🗄️ PRODUCTION DATABASE (POSTGRESQL FOR RENDER)
+if os.environ.get('DATABASE_URL'):
+    # Production database (Render PostgreSQL)
     DATABASES = {
-        'default': dj_database_url.parse(os.environ['DATABASE_URL'])
+        'default': dj_database_url.parse(os.environ.get('DATABASE_URL'))
     }
 else:
+    # Development database
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
+            'CONN_MAX_AGE': 0,
         }
     }
 
@@ -99,21 +109,21 @@ TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
+# 📁 PRODUCTION STATIC FILES
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-
-# Remove React build static files dependency for now
 STATICFILES_DIRS = []
 
+# 🖼️ MEDIA FILES
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Default primary key field type
+# 📱 STATICFILES STORAGE (WHITENOISE)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# REST Framework configuration
+# 🔗 REST FRAMEWORK
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
@@ -125,16 +135,16 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20
 }
 
-# CORS settings for React frontend - ENHANCED
+# 🌍 CORS SETTINGS FOR PRODUCTION
 CORS_ALLOWED_ORIGINS = [
-    "https://smart-expense-tracker-with-ai-insig-six.vercel.app",
+    "https://smart-expense-tracker-with-ai-insig-six.vercel.app",  # ✅ Your actual Vercel URL
     "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = False  # For development only
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only allow all in development
 CORS_ALLOW_CREDENTIALS = True
 
-# Enhanced CORS headers to fix routing issues
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
@@ -149,6 +159,18 @@ CORS_ALLOW_HEADERS = [
     'pragma',
 ]
 
+# 🔒 PRODUCTION SECURITY SETTINGS
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_SECONDS = 86400
+    SECURE_REFERRER_POLICY = 'origin'
+    
+    # SSL settings (Render provides HTTPS)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+
 # Disable caching in development to prevent issues
 if DEBUG:
     CACHES = {
@@ -157,7 +179,7 @@ if DEBUG:
         }
     }
 
-# UPDATED LOGGING - Hide frontend route 404s
+# 📝 PRODUCTION LOGGING
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -170,30 +192,16 @@ LOGGING = {
             'format': '{levelname} {message}',
             'style': '{',
         },
-        'clean': {
-            'format': '{levelname} "{message}"',
-            'style': '{',
-        },
-    },
-    'filters': {
-        'skip_frontend_routes': {
-            '()': 'django.utils.log.CallbackFilter',
-            'callback': lambda record: not any(route in record.getMessage() for route in [
-                '/dashboard', '/expenses', '/reports', '/login', '/register',
-                '/static/css/', '/static/js/', '/favicon.ico', '/manifest.json'
-            ])
-        }
     },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'formatter': 'clean',
-            'filters': ['skip_frontend_routes'],
+            'formatter': 'simple' if DEBUG else 'verbose',
         },
-        'api_console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
-        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
     },
     'loggers': {
         'django': {
@@ -201,30 +209,25 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
-        'django.request': {
-            'handlers': ['console'],
-            'level': 'WARNING',  # Show warnings but filter out frontend route 404s
-            'propagate': False,
-        },
-        # API related logging (show all API calls)
         'authentication': {
-            'handlers': ['api_console'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
         'expenses': {
-            'handlers': ['api_console'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
         'ai_insights': {
-            'handlers': ['api_console'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
     },
 }
 
+# 🚫 DEBUG TOOLBAR COMPLETELY DISABLED
 DEBUG_TOOLBAR_CONFIG = {
     'SHOW_TOOLBAR_CALLBACK': lambda request: False,  # Always hide
 }
@@ -244,5 +247,9 @@ INTERNAL_IPS = []
 # Disable debug info in responses
 DEBUG_PROPAGATE_EXCEPTIONS = False
 
+print("🚀 Production settings loaded successfully!")
+print(f"🔧 DEBUG mode: {DEBUG}")
+print(f"🌐 Allowed hosts: {ALLOWED_HOSTS}")
+print(f"🗄️ Database: {'PostgreSQL (Production)' if os.environ.get('DATABASE_URL') else 'SQLite (Development)'}")
 print("🚫 Debug toolbar completely disabled!")
 print("✅ Frontend route 404s will be hidden from logs")

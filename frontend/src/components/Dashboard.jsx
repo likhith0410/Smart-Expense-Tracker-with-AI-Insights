@@ -1,8 +1,7 @@
 // frontend/src/components/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { 
-  TrendingUp, 
-  TrendingDown, 
+  TrendingUp,  
   DollarSign, 
   CreditCard,
   Target,

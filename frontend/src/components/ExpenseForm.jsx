@@ -1,4 +1,4 @@
-// frontend/src/components/ExpenseForm.jsx - UPDATED WITH CURRENCY SUPPORT
+// frontend/src/components/ExpenseForm.jsx - HARDCODED CATEGORIES VERSION
 import React, { useState, useEffect } from 'react';
 import { X, Camera, Sparkles, Save } from 'lucide-react';
 import { expenseService } from '../services/api';
@@ -17,7 +17,7 @@ const ExpenseForm = ({ isOpen, onClose, onExpenseAdded, editingExpense = null })
     date: formatDate(new Date(), 'yyyy-MM-dd'),
     receipt_image: null,
   });
-  const [categories, setCategories] = useState([]);
+  
   const [loading, setLoading] = useState(false);
   const [scanningReceipt, setScanningReceipt] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState(null);
@@ -25,8 +25,6 @@ const ExpenseForm = ({ isOpen, onClose, onExpenseAdded, editingExpense = null })
 
   useEffect(() => {
     if (isOpen) {
-      fetchCategories();
-      // Get current currency
       setCurrentCurrency(currencyService.getCurrentCurrency());
       
       if (editingExpense) {
@@ -34,7 +32,7 @@ const ExpenseForm = ({ isOpen, onClose, onExpenseAdded, editingExpense = null })
           title: editingExpense.title,
           description: editingExpense.description || '',
           amount: editingExpense.amount.toString(),
-          category: editingExpense.category.toString(),
+          category: editingExpense.category || '',
           payment_method: editingExpense.payment_method,
           date: formatDate(editingExpense.date, 'yyyy-MM-dd'),
           receipt_image: null,
@@ -54,16 +52,6 @@ const ExpenseForm = ({ isOpen, onClose, onExpenseAdded, editingExpense = null })
     window.addEventListener('currencyChanged', handleCurrencyChange);
     return () => window.removeEventListener('currencyChanged', handleCurrencyChange);
   }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const data = await expenseService.getCategories();
-      setCategories(data.results || data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      toast.error('Failed to load categories');
-    }
-  };
 
   const resetForm = () => {
     setFormData({
@@ -99,7 +87,9 @@ const ExpenseForm = ({ isOpen, onClose, onExpenseAdded, editingExpense = null })
         title, 
         description: formData.description 
       });
-      setAiSuggestion(suggestion.suggested_category);
+      if (suggestion.suggested_category?.name) {
+        setAiSuggestion(suggestion.suggested_category.name);
+      }
     } catch (error) {
       console.error('Error getting AI suggestion:', error);
     }
@@ -107,7 +97,7 @@ const ExpenseForm = ({ isOpen, onClose, onExpenseAdded, editingExpense = null })
 
   const applySuggestion = () => {
     if (aiSuggestion) {
-      setFormData(prev => ({ ...prev, category: aiSuggestion.id.toString() }));
+      setFormData(prev => ({ ...prev, category: aiSuggestion }));
       setAiSuggestion(null);
       toast.success('AI suggestion applied!');
     }
@@ -125,7 +115,7 @@ const ExpenseForm = ({ isOpen, onClose, onExpenseAdded, editingExpense = null })
         ...prev,
         title: result.merchant || prev.title,
         amount: result.amount ? result.amount.toString() : prev.amount,
-        category: result.suggested_category?.id?.toString() || prev.category,
+        category: result.suggested_category?.name || prev.category,
       }));
       
       toast.success('Receipt scanned successfully! 📄✨');
@@ -238,11 +228,22 @@ const ExpenseForm = ({ isOpen, onClose, onExpenseAdded, editingExpense = null })
                 required
               >
                 <option value="">Select a category</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.name}
-                  </option>
-                ))}
+                <option value="food_dining">🍽️ Food & Dining</option>
+                <option value="transportation">🚗 Transportation</option>
+                <option value="shopping">🛍️ Shopping</option>
+                <option value="entertainment">🎬 Entertainment</option>
+                <option value="healthcare">🏥 Healthcare</option>
+                <option value="utilities">⚡ Utilities</option>
+                <option value="education">📚 Education</option>
+                <option value="groceries">🛒 Groceries</option>
+                <option value="fitness">💪 Fitness</option>
+                <option value="travel">✈️ Travel</option>
+                <option value="bills_subscriptions">📄 Bills & Subscriptions</option>
+                <option value="clothing">👕 Clothing</option>
+                <option value="electronics">📱 Electronics</option>
+                <option value="home_garden">🏠 Home & Garden</option>
+                <option value="gifts_donations">🎁 Gifts & Donations</option>
+                <option value="other">💰 Other</option>
               </select>
               
               {aiSuggestion && (
@@ -253,7 +254,7 @@ const ExpenseForm = ({ isOpen, onClose, onExpenseAdded, editingExpense = null })
                     onClick={applySuggestion}
                   >
                     <Sparkles size={16} />
-                    AI suggests: {aiSuggestion.icon} {aiSuggestion.name}
+                    AI suggests: {aiSuggestion}
                   </button>
                 </div>
               )}
