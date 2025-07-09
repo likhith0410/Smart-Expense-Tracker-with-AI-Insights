@@ -137,10 +137,12 @@ REST_FRAMEWORK = {
 
 # 🌍 CORS SETTINGS FOR PRODUCTION
 CORS_ALLOWED_ORIGINS = [
-    "https://smart-expense-tracker-with-ai-insig.vercel.app",  # ✅ Correct
     "https://smart-expense-tracker-with-ai-insights-lc6s-dipq0egm5.vercel.app",  # ✅ Preview URL
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+]
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://smart-expense-tracker.*\.vercel\.app$",  # All future URLs
 ]
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only allow all in development
